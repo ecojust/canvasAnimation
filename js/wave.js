@@ -6,15 +6,7 @@
 # Description: 
 #
 ============================================================================= */
-/* ============================================================================= 
-#
-# Author: 桔子桑
-# Date: 2020-07-28 17:50:10
-# FilePath: /canvasAnimation/js/wave.js
-# Description: 
-#
-============================================================================= */
-var uniformTime = 0;
+var uniformTime = 0,bindBuffer = false,n = 0;
 function wave() {
     const vs = `
         attribute vec4 a_Position;
@@ -77,49 +69,38 @@ function wave() {
               }
               index +=1.0;
           }
-          gl_FragColor = wavecolor +shadowcolor +pointcolor;
+          gl_FragColor = wavecolor +shadowcolor + pointcolor;
         }
     `;
+    var canvas = document.getElementById("webgl");
+    var gl = getWebGLContext(canvas);
+    if (!gl) {
+      console.log("Failed to get the rendering context for WebGL!");
+      return;
+    }
+    if (!initShaders(gl, vs, fs)) {
+      console.log("Failed to initialize shaders.");
+      return;
+    }
     function main() {
-      var canvas = document.getElementById("webgl");
-      console.log(canvas)
-      var gl = getWebGLContext(canvas);
-      if (!gl) {
-        console.log("Failed to get the rendering context for WebGL!");
-        return;
+      if(!bindBuffer){
+        n = initVertexBuffers(gl);
       }
-      if (!initShaders(gl, vs, fs)) {
-        console.log("Failed to initialize shaders.");
-        return;
-      }
-      var n = initVertexBuffers(gl);
       if (n < 0) {
         console.log("Failed to set the positions of the vertices!");
         return;
       }
       gl.clearColor(0.4, 0.5, 0.0, 0.0);
-      gl.clear(gl.COLOR_BUFFER_BIT);
-      gl.enable(gl.BLEND);
+      // gl.clear(gl.COLOR_BUFFER_BIT);
+      // gl.enable(gl.BLEND);
       // gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, n);
       function initVertexBuffers(gl) {
         var verticesTex = new Float32Array([
-          -1.0,
-          1.0,
-          0.0,
-          1.0,
-          -1.0,
-          -1.0,
-          0.0,
-          0.0,
-          1.0,
-          1.0,
-          1.0,
-          1.0,
-          1.0,
-          -1.0,
-          1.0,
-          0.0
+          -1.0,1.0,0.0,1.0,
+          -1.0,-1.0,0.0,0.0,
+          1.0,1.0,1.0,1.0,
+          1.0,-1.0,1.0,0.0
         ]);
         var n = 4;
         var vertexTexBuffer = gl.createBuffer();
@@ -139,15 +120,24 @@ function wave() {
         gl.vertexAttribPointer(a_Position, 2, gl.FLOAT, false, fsize * 4, 0);
         gl.enableVertexAttribArray(a_Position);
 
-        var time = gl.getUniformLocation(gl.program, "time");
-        if (time < 0) {
-          console.log("Failed to get the storage location of a_Position");
-          return -1;
-        }
-        gl.uniform1f(time, uniformTime);
+        // var time = gl.getUniformLocation(gl.program, "time");
+        // if (time < 0) {
+        //   console.log("Failed to get the storage location of a_Position");
+        //   return -1;
+        // }
+        // gl.uniform1f(time, uniformTime);
+        bindBuffer = true;
         return n;
       }
+
       uniformTime -= 3.0;
+      var time = gl.getUniformLocation(gl.program, "time");
+      if (time < 0) {
+        console.log("Failed to get the storage location of a_Position");
+        return -1;
+      }
+      gl.uniform1f(time, uniformTime);
+      
       requestAnimationFrame(main);
     }
     main();
