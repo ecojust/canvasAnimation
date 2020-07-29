@@ -60,12 +60,11 @@ function hollowOut() {
             float dis = abs(sy - v_TexCoord.y);
             if(dis < linewidth){
               float alpha = smoothstep(1.0,0.0,dis/linewidth);
-              line = vec4(vec3(0.0,1.0,1.0) * alpha/4.0,alpha/4.0);
+              line = vec4(vec3(0.0,1.0,1.0) * alpha/8.0,alpha/4.0);
             }
             index +=1.0;
             linewidth -= 0.001;
           }
-          line.a = 0.2;
 
           float rline = smoothstep(1.0,0.0,tex.r);
           vec4 finalColor = mix(tex,line,rline);
@@ -127,7 +126,6 @@ function hollowOut() {
         gl.vertexAttribPointer(a_Position, 2, gl.FLOAT, false, fsize * 4, 0);
         gl.enableVertexAttribArray(a_Position);
 
-
         var a_TexCoord = gl.getAttribLocation(gl.program,'a_TexCoord');
         if (a_TexCoord < 0) {
             console.log('Failed to get the storage location of a_TexCoord');
@@ -135,8 +133,6 @@ function hollowOut() {
         }
         gl.vertexAttribPointer(a_TexCoord,2,gl.FLOAT,false,fsize * 4,fsize * 2);
         gl.enableVertexAttribArray(a_TexCoord);
-
-
 
         var time = gl.getUniformLocation(gl.program, "time");
         if (time < 0) {
@@ -157,7 +153,6 @@ function hollowOut() {
               loadTexture(gl,pos,texture,u_Sampler,image);
           }
           image.src = src;
-          // image.src = '../images/map2.jpeg';
           return true;
       }
 
@@ -165,8 +160,6 @@ function hollowOut() {
       var g_texUnit = false,g_texUnit1 = false;
       function loadTexture(gl,pos,texture,u_Sampler,image){
         gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,1);
-
-        //开启0号纹理单元
         if(pos == 0){
             gl.activeTexture(gl.TEXTURE0);
             g_texUnit = true;
@@ -174,7 +167,6 @@ function hollowOut() {
             gl.activeTexture(gl.TEXTURE1);
             g_texUnit1 = true;
         }
-
         gl.bindTexture(gl.TEXTURE_2D,texture);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
@@ -182,9 +174,6 @@ function hollowOut() {
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
         gl.texImage2D(gl.TEXTURE_2D,0,gl.RGB,gl.RGB,gl.UNSIGNED_BYTE,image);
         gl.uniform1i(u_Sampler,pos);
-
-
-        //绘制
         if(g_texUnit && g_texUnit1){
             animate();
         }
