@@ -23,6 +23,11 @@ function hollowOut() {
         #endif
         uniform float time;
         uniform sampler2D u_Sampler;
+        uniform sampler2D u_Map;
+
+
+
+        
         varying vec2 v_TexCoord;
 
         void main(){
@@ -33,14 +38,19 @@ function hollowOut() {
 
           float cycle = sin(time * 9.0);
 
-          vec3 from = vec3(255./255.,215./255.,0./255.);
-          vec3 to = vec3(255./255.,20./255.,147./255.);
-          float step = (cycle+1.0)/2.0;
-          vec4 bg = vec4(
-            from.r + step * (to.r - from.r),
-            from.g + step * (to.g - from.g),
-            from.b + step * (to.b - from.b),
-          1.0);
+          // vec3 from = vec3(255./255.,215./255.,0./255.);
+          // vec3 to = vec3(255./255.,20./255.,147./255.);
+          // float step = (cycle+1.0)/2.0;
+          // vec4 bg = vec4(
+          //   from.r + step * (to.r - from.r),
+          //   from.g + step * (to.g - from.g),
+          //   from.b + step * (to.b - from.b),
+          // 1.0);
+
+          vec4 bg = texture2D(u_Map,v_TexCoord);
+
+
+
 
           vec4 line = vec4(0.0);
           float linewidth = 0.02;
@@ -82,7 +92,12 @@ function hollowOut() {
         return;
       }
 
-      if(!initTextures(gl,n)){
+      if(!initTextures(0,'../images/bg2.jpg','u_Sampler')){
+        console.log('Failed to initialize textures.');
+        return;
+      }
+
+      if(!initTextures(1,'../images/bg.png','u_Map')){
         console.log('Failed to initialize textures.');
         return;
       }
@@ -134,30 +149,45 @@ function hollowOut() {
       }
 
       //初始化纹理图片，通过image传入
-      function initTextures(){
+      function initTextures(pos,src,uniform){
           var texture = gl.createTexture();
-          var u_Sampler = gl.getUniformLocation(gl.program,'u_Sampler');
+          var u_Sampler = gl.getUniformLocation(gl.program,uniform);
           var image = new Image();
           image.onload = function(){
-              loadTexture(gl,n,texture,u_Sampler,image);
+              loadTexture(gl,pos,texture,u_Sampler,image);
           }
-          image.src = '../images/bg2.jpg';
+          image.src = src;
           // image.src = '../images/map2.jpeg';
           return true;
       }
 
       //加载纹理
-      function loadTexture(gl,n,texture,u_Sampler,image){
+      var g_texUnit = false,g_texUnit1 = false;
+      function loadTexture(gl,pos,texture,u_Sampler,image){
         gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,1);
-        gl.activeTexture(gl.TEXTURE0);
+
+        //开启0号纹理单元
+        if(pos == 0){
+            gl.activeTexture(gl.TEXTURE0);
+            g_texUnit = true;
+        }else if(pos == 1){
+            gl.activeTexture(gl.TEXTURE1);
+            g_texUnit1 = true;
+        }
+
         gl.bindTexture(gl.TEXTURE_2D,texture);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
         gl.texImage2D(gl.TEXTURE_2D,0,gl.RGB,gl.RGB,gl.UNSIGNED_BYTE,image);
-        gl.uniform1i(u_Sampler,0);
-        animate();
+        gl.uniform1i(u_Sampler,pos);
+
+
+        //绘制
+        if(g_texUnit && g_texUnit1){
+            animate();
+        }
       }
 
       function animate(){
@@ -167,7 +197,7 @@ function hollowOut() {
         gl.enable(gl.BLEND);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, n);
 
-        uniformTime+=0.001;
+        uniformTime+=0.00025;
         var time = gl.getUniformLocation(gl.program, "time");
         if (time < 0) {
           console.log("Failed to get the storage location of a_Position");
