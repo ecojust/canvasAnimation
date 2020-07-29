@@ -29,41 +29,38 @@ function hollowOut() {
           // vec2 p = gl_FragCoord.xy;
           // vec2 uv = gl_FragCoord.xy/vec2(800.,600.);
 
-
           vec4 tex = texture2D(u_Sampler,v_TexCoord);
 
+          float cycle = sin(time * 9.0);
 
-          vec4 color = vec4(1.0,0.0,0.0,1.0);
-          if(v_TexCoord.y > 0.5){
-            color = vec4(0.0,1.0,0.0,1.0);
-          }
-
-          float cycle = sin(time * 5.0);
+          vec3 from = vec3(255./255.,215./255.,0./255.);
+          vec3 to = vec3(255./255.,20./255.,147./255.);
+          float step = (cycle+1.0)/2.0;
+          vec4 bg = vec4(
+            from.r + step * (to.r - from.r),
+            from.g + step * (to.g - from.g),
+            from.b + step * (to.b - from.b),
+          1.0);
 
           vec4 line = vec4(0.0);
-
+          float linewidth = 0.02;
           float index = 1.0;
           for(int i = 1; i < 20; i++){
-            float sy = sin((v_TexCoord.x + 0.0) * 9.0  + cycle ) * 0.4 * (cycle - index/150.0) + 0.5 ;
+            float sy = sin((v_TexCoord.x + 0.0) * 6.0  + cycle ) * 0.4 * (cycle - index/60.0) + 0.52 ;
             float dis = abs(sy - v_TexCoord.y);
-            if(dis < 0.005){
-              float alpha = smoothstep(1.0,0.0,dis/0.005);
-              line = vec4(vec3(0.0,0.0,1.0) * alpha,alpha);
+            if(dis < linewidth){
+              float alpha = smoothstep(1.0,0.0,dis/linewidth);
+              line = vec4(vec3(0.0,1.0,1.0) * alpha/4.0,alpha/4.0);
             }
-
             index +=1.0;
+            linewidth -= 0.001;
           }
+          line.a = 0.2;
 
-
-          
-
-
-          
-          // gl_FragColor = mix(tex,color,0.5) + line;
-          gl_FragColor = mix(tex,line,0.5);
-          // gl_FragColor = line;
-
-
+          float rline = smoothstep(1.0,0.0,tex.r);
+          vec4 finalColor = mix(tex,line,rline);
+          finalColor.a = rline;
+          gl_FragColor = mix(finalColor ,(bg + line) * rline,rline);
         }
     `;
     var canvas = document.getElementById("webgl");
@@ -121,7 +118,6 @@ function hollowOut() {
             console.log('Failed to get the storage location of a_TexCoord');
             return -1;
         }
-        //将缓冲区对象分配给a_TexCoord变量并开启访问
         gl.vertexAttribPointer(a_TexCoord,2,gl.FLOAT,false,fsize * 4,fsize * 2);
         gl.enableVertexAttribArray(a_TexCoord);
 
@@ -139,60 +135,39 @@ function hollowOut() {
 
       //初始化纹理图片，通过image传入
       function initTextures(){
-        console.log('image')
-        //创建纹理对象
           var texture = gl.createTexture();
-
-          //读取u_Sampler存储位置
           var u_Sampler = gl.getUniformLocation(gl.program,'u_Sampler');
-
           var image = new Image();
-
           image.onload = function(){
               loadTexture(gl,n,texture,u_Sampler,image);
           }
-
-          image.src = '../images/map.jpg';
+          image.src = '../images/bg2.jpg';
           // image.src = '../images/map2.jpeg';
-
-
           return true;
       }
 
-          //加载纹理
+      //加载纹理
       function loadTexture(gl,n,texture,u_Sampler,image){
-        //对问题图像进行y轴反转
         gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,1);
-        //开启0号纹理单元
         gl.activeTexture(gl.TEXTURE0);
-        //向target绑定纹理对象
         gl.bindTexture(gl.TEXTURE_2D,texture);
-        //配置纹理参数
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-        //处理图片像素非2的幂次方的配置
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-
-        //配置纹理图像
         gl.texImage2D(gl.TEXTURE_2D,0,gl.RGB,gl.RGB,gl.UNSIGNED_BYTE,image);
-        //将0号纹理传递给着色器
         gl.uniform1i(u_Sampler,0);
-
         animate();
       }
 
       function animate(){
-        gl.clearColor(0.4, 0.5, 0.0, 0.0);
+        gl.clearColor(0.0, 0.0, 0.0, 0.0);
         gl.clear(gl.COLOR_BUFFER_BIT);
-        // gl.enable(gl.BLEND);
-        // gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
+        gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+        gl.enable(gl.BLEND);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, n);
 
         uniformTime+=0.001;
-        // console.log(uniformTime)
         var time = gl.getUniformLocation(gl.program, "time");
         if (time < 0) {
           console.log("Failed to get the storage location of a_Position");
@@ -200,7 +175,6 @@ function hollowOut() {
         }
         gl.uniform1f(time, uniformTime);
         requestAnimationFrame(animate);
-
       }
     }
     main();
